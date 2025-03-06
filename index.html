@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adidas Schuh-Erkennung</title>
+  
+  <style>
+    * {
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      text-align: center;
+      font-family: sans-serif;
+    }
+    .logo {
+      max-height: 40px;
+      margin: 20px 0;
+    }
+    button {
+      background-color: #000;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #333;
+    }
+    #webcam-container {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    #webcam-container canvas {
+      width: 100%;
+      max-width: 400px;
+      height: auto;
+    }
+    #shoe-name {
+      margin-top: 30px;
+      font-size: 2rem;
+      font-weight: bold;
+      color: #444;
+      transition: color 0.3s ease;
+    }
+    .highlight {
+      color: #f90;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img class="logo" src="adidas-logo-schwarz.png" alt="Adidas Logo">
+    <h1>Schuh-Erkennung</h1>
+    <p>Halte deinen Schuh vor die Kamera und klicke auf „Start“.</p>
+
+    <button type="button" onclick="init()">Start</button>
+
+    <div id="webcam-container"></div>
+    <div id="shoe-name"></div>
+  </div>
+
+  <!-- TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <!-- Teachable Machine Image -->
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+  <script>
+    const URL = "./my_model/";
+
+    let model, webcam, maxPredictions;
+
+    async function init() {
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+
+      model = await tmImage.load(modelURL, metadataURL);
+      maxPredictions = model.getTotalClasses();
+
+      const flip = true;
+      webcam = new tmImage.Webcam(200, 200, flip);
+      await webcam.setup();
+      await webcam.play();
+      window.requestAnimationFrame(loop);
+
+      document.getElementById("webcam-container").appendChild(webcam.canvas);
+    }
+
+    async function loop() {
+      webcam.update();
+      await predict();
+      window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+      const prediction = await model.predict(webcam.canvas);
+      prediction.sort((a, b) => b.probability - a.probability);
+
+      const best = prediction[0];
+      const shoeNameEl = document.getElementById("shoe-name");
+
+      // Schwellwert sehr hoch, z.B. 0.95
+      const threshold = 0.95;
+
+      if (best.className === "Superstar" && best.probability > threshold) {
+        shoeNameEl.textContent = "SUPERSTAR";
+        shoeNameEl.classList.add("highlight");
+      } else if (best.className === "Handball Spezial" && best.probability > threshold) {
+        shoeNameEl.textContent = "HANDBALL SPEZIAL";
+        shoeNameEl.classList.add("highlight");
+      } else {
+        shoeNameEl.textContent = "";
+        shoeNameEl.classList.remove("highlight");
+      }
+    }
+  </script>
+</body>
+</html>
