@@ -1,16 +1,19 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
+  <!-- Optimize for mobile devices -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Adidas Schuh-Erkennung</title>
-  
+  <title>Adidas Shoe Recognition (Rear Camera)</title>
+
   <style>
+    /* Basic reset */
     * {
-      margin: 0; 
-      padding: 0; 
+      margin: 0;
+      padding: 0;
       box-sizing: border-box;
     }
+    /* Centered container, up to 600px wide */
     .container {
       max-width: 600px;
       margin: 0 auto;
@@ -18,10 +21,12 @@
       text-align: center;
       font-family: sans-serif;
     }
+    /* Optional black Adidas logo (replace if needed) */
     .logo {
       max-height: 40px;
       margin: 20px 0;
     }
+    /* Start button styling */
     button {
       background-color: #000;
       color: #fff;
@@ -35,16 +40,19 @@
     button:hover {
       background-color: #333;
     }
+    /* Webcam container */
     #webcam-container {
       margin-top: 20px;
       display: flex;
       justify-content: center;
     }
+    /* Responsive canvas for mobile */
     #webcam-container canvas {
       width: 100%;
       max-width: 400px;
       height: auto;
     }
+    /* Display area for shoe name */
     #shoe-name {
       margin-top: 30px;
       font-size: 2rem;
@@ -52,29 +60,36 @@
       color: #444;
       transition: color 0.3s ease;
     }
+    /* Highlight effect when a shoe is recognized */
     .highlight {
-      color: #f90;
+      color: #f90; /* Orange color */
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <img class="logo" src="adidas-logo-schwarz.png" alt="Adidas Logo">
-    <h1>Schuh-Erkennung</h1>
-    <p>Halte deinen Schuh vor die Kamera und klicke auf „Start“.</p>
+    <!-- Optional black Adidas logo (transparent background) -->
+    <img class="logo" src="adidas-logo-black.png" alt="Adidas Logo">
+    
+    <h1>Shoe Recognition</h1>
+    <p>Point your Adidas shoe toward the camera and tap "Start".</p>
 
+    <!-- Start button -->
     <button type="button" onclick="init()">Start</button>
 
+    <!-- Webcam area -->
     <div id="webcam-container"></div>
+    <!-- Recognized shoe name display -->
     <div id="shoe-name"></div>
   </div>
 
   <!-- TensorFlow.js -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-  <!-- Teachable Machine Image -->
+  <!-- Teachable Machine Image Library -->
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
   <script>
+    // Path to your Teachable Machine model
     const URL = "./my_model/";
 
     let model, webcam, maxPredictions;
@@ -83,16 +98,22 @@
       const modelURL = URL + "model.json";
       const metadataURL = URL + "metadata.json";
 
+      // 1) Load the model
       model = await tmImage.load(modelURL, metadataURL);
       maxPredictions = model.getTotalClasses();
 
-      const flip = true;
-      webcam = new tmImage.Webcam(200, 200, flip);
-      await webcam.setup();
+      // 2) Use the rear-facing camera
+      // flip = false (no mirroring for rear camera)
+      // facingMode = "environment" ensures the camera points away from the user
+      webcam = new tmImage.Webcam(200, 200, false, "environment");
+      await webcam.setup(); // request camera access
       await webcam.play();
-      window.requestAnimationFrame(loop);
 
+      // Insert the webcam canvas into the page
       document.getElementById("webcam-container").appendChild(webcam.canvas);
+
+      // Start the continuous prediction loop
+      window.requestAnimationFrame(loop);
     }
 
     async function loop() {
@@ -103,12 +124,13 @@
 
     async function predict() {
       const prediction = await model.predict(webcam.canvas);
+      // Sort by highest probability first
       prediction.sort((a, b) => b.probability - a.probability);
 
       const best = prediction[0];
       const shoeNameEl = document.getElementById("shoe-name");
 
-      // Schwellwert sehr hoch, z.B. 0.95
+      // High threshold (e.g., 0.95) to avoid false positives
       const threshold = 0.95;
 
       if (best.className === "Superstar" && best.probability > threshold) {
@@ -118,6 +140,7 @@
         shoeNameEl.textContent = "HANDBALL SPEZIAL";
         shoeNameEl.classList.add("highlight");
       } else {
+        // No recognized shoe or probability too low
         shoeNameEl.textContent = "";
         shoeNameEl.classList.remove("highlight");
       }
