@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="UTF-8">
-  <!-- Optimize for mobile devices -->
+  <!-- Für Mobile Optimierung -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Adidas Shoe Recognition (Rear Camera)</title>
+  <title>Adidas Schuh-Erkennung (Rückkamera)</title>
 
   <style>
-    /* Basic reset */
+    /* Einfaches Reset */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    /* Centered container, up to 600px wide */
+    /* Container zentriert, max. 600px Breite */
     .container {
       max-width: 600px;
       margin: 0 auto;
@@ -21,12 +21,12 @@
       text-align: center;
       font-family: sans-serif;
     }
-    /* Optional black Adidas logo (replace if needed) */
+    /* Optionales schwarzes Adidas-Logo (ersetzbar) */
     .logo {
       max-height: 40px;
       margin: 20px 0;
     }
-    /* Start button styling */
+    /* Start-Button */
     button {
       background-color: #000;
       color: #fff;
@@ -40,19 +40,19 @@
     button:hover {
       background-color: #333;
     }
-    /* Webcam container */
+    /* Webcam-Container */
     #webcam-container {
       margin-top: 20px;
       display: flex;
       justify-content: center;
     }
-    /* Responsive canvas for mobile */
+    /* Canvas skalieren, um mobilfreundlich zu sein */
     #webcam-container canvas {
       width: 100%;
       max-width: 400px;
       height: auto;
     }
-    /* Display area for shoe name */
+    /* Schuhname-Anzeige */
     #shoe-name {
       margin-top: 30px;
       font-size: 2rem;
@@ -60,36 +60,34 @@
       color: #444;
       transition: color 0.3s ease;
     }
-    /* Highlight effect when a shoe is recognized */
+    /* Farb-Highlight, wenn erkannt */
     .highlight {
-      color: #f90; /* Orange color */
+      color: #f90; /* Orange */
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Optional black Adidas logo (transparent background) -->
-    <img class="logo" src="adidas-logo-black.png" alt="Adidas Logo">
-    
-    <h1>Shoe Recognition</h1>
-    <p>Point your Adidas shoe toward the camera and tap "Start".</p>
+    <!-- Falls du ein Logo hast (schwarz, transparent) -->
+    <img class="logo" src="adidas-logo-schwarz.png" alt="Adidas Logo">
+    <h1>Schuh-Erkennung</h1>
+    <p>Halte deinen Schuh vor die Kamera und klicke auf „Start“.</p>
 
-    <!-- Start button -->
+    <!-- Button zum Starten -->
     <button type="button" onclick="init()">Start</button>
 
-    <!-- Webcam area -->
+    <!-- Webcam-Bereich -->
     <div id="webcam-container"></div>
-    <!-- Recognized shoe name display -->
+    <!-- Schuhname-Anzeige -->
     <div id="shoe-name"></div>
   </div>
 
-  <!-- TensorFlow.js -->
+  <!-- TensorFlow.js laden -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-  <!-- Teachable Machine Image Library -->
+  <!-- Teachable Machine Image-Bibliothek laden -->
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 
   <script>
-    // Path to your Teachable Machine model
     const URL = "./my_model/";
 
     let model, webcam, maxPredictions;
@@ -98,21 +96,21 @@
       const modelURL = URL + "model.json";
       const metadataURL = URL + "metadata.json";
 
-      // 1) Load the model
+      // 1) Modell laden
       model = await tmImage.load(modelURL, metadataURL);
       maxPredictions = model.getTotalClasses();
 
-      // 2) Use the rear-facing camera
-      // flip = false (no mirroring for rear camera)
-      // facingMode = "environment" ensures the camera points away from the user
+      // 2) Webcam mit Rückkamera
+      // flip = false (weil wir meist nicht spiegeln wollen)
+      // facingMode = "environment" für Rückkamera
       webcam = new tmImage.Webcam(200, 200, false, "environment");
-      await webcam.setup(); // request camera access
+      await webcam.setup(); // Zugriff auf Kamera anfordern
       await webcam.play();
 
-      // Insert the webcam canvas into the page
+      // Webcam ins DOM
       document.getElementById("webcam-container").appendChild(webcam.canvas);
 
-      // Start the continuous prediction loop
+      // Schleife starten
       window.requestAnimationFrame(loop);
     }
 
@@ -124,13 +122,13 @@
 
     async function predict() {
       const prediction = await model.predict(webcam.canvas);
-      // Sort by highest probability first
+      // Sortiere nach höchster Wahrscheinlichkeit
       prediction.sort((a, b) => b.probability - a.probability);
 
       const best = prediction[0];
       const shoeNameEl = document.getElementById("shoe-name");
 
-      // High threshold (e.g., 0.95) to avoid false positives
+      // Hoher Threshold, z.B. 0.95, damit "kein Schuh" seltener fälschlich erkannt wird
       const threshold = 0.95;
 
       if (best.className === "Superstar" && best.probability > threshold) {
@@ -140,7 +138,7 @@
         shoeNameEl.textContent = "HANDBALL SPEZIAL";
         shoeNameEl.classList.add("highlight");
       } else {
-        // No recognized shoe or probability too low
+        // Kein Schuh oder zu geringe Wahrscheinlichkeit
         shoeNameEl.textContent = "";
         shoeNameEl.classList.remove("highlight");
       }
