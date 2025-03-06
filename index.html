@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Ensures mobile responsiveness -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adidas Shoe Recognition</title>
+
+  <style>
+    /* Basic CSS reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    /* Centered container, up to 600px wide */
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      text-align: center;
+      font-family: sans-serif;
+    }
+    /* Adidas logo styling */
+    .logo {
+      max-height: 40px;
+      margin: 20px 0;
+    }
+    /* Start button style */
+    button {
+      background-color: #000;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #333;
+    }
+    /* Webcam container */
+    #webcam-container {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    /* Responsive canvas for mobile */
+    #webcam-container canvas {
+      width: 100%;
+      max-width: 400px;
+      height: auto;
+    }
+    /* Display area for recognized class */
+    #shoe-name {
+      margin-top: 30px;
+      font-size: 2rem;
+      font-weight: bold;
+      color: #444;
+      transition: color 0.3s ease;
+    }
+    /* Highlight effect */
+    .highlight {
+      color: #f90; /* orange */
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Make sure "adidas-logo.png" is in the same folder as this index.html -->
+    <img class="logo" src="adidas-logo.png" alt="Adidas Logo">
+    
+    <h1>Shoe Recognition</h1>
+    <p>Point your shoe at the camera and tap "Start".</p>
+
+    <!-- Button to initialize the model and camera -->
+    <button type="button" onclick="init()">Start</button>
+
+    <!-- Webcam display area -->
+    <div id="webcam-container"></div>
+    <!-- Area to display the recognized shoe name -->
+    <div id="shoe-name"></div>
+  </div>
+
+  <!-- Load TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <!-- Load Teachable Machine Image library -->
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+  <script>
+    // Path to your Teachable Machine model
+    const URL = "./my_model/";
+
+    let model, webcam, maxPredictions;
+
+    async function init() {
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+
+      // 1) Load the model
+      model = await tmImage.load(modelURL, metadataURL);
+      maxPredictions = model.getTotalClasses();
+
+      // 2) Use the rear-facing camera
+      // flip = false (no mirror for rear camera)
+      // facingMode = "environment" for the camera pointing away from the user
+      webcam = new tmImage.Webcam(200, 200, false, "environment");
+      await webcam.setup(); // request camera access
+      await webcam.play();
+
+      // Add the webcam canvas to the page
+      document.getElementById("webcam-container").appendChild(webcam.canvas);
+
+      // Start the continuous prediction loop
+      window.requestAnimationFrame(loop);
+    }
+
+    async function loop() {
+      webcam.update();
+      await predict();
+      window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+      // Make a prediction
+      const prediction = await model.predict(webcam.canvas);
+      // Sort by probability, highest first
+      prediction.sort((a, b) => b.probability - a.probability);
+
+      const best = prediction[0];
+      const shoeNameEl = document.getElementById("shoe-name");
+
+      // We'll use a threshold to avoid false positives
+      const threshold = 0.9;
+
+      if (best.probability < threshold) {
+        // Probability too low, show nothing
+        shoeNameEl.textContent = "";
+        shoeNameEl.classList.remove("highlight");
+      } else {
+        // If above threshold, check which class
+        if (best.className === "Superstar") {
+          shoeNameEl.textContent = "SUPERSTAR";
+          shoeNameEl.classList.add("highlight");
+        } else if (best.className === "Handball Spezial") {
+          shoeNameEl.textContent = "HANDBALL SPEZIAL";
+          shoeNameEl.classList.add("highlight");
+        } else if (best.className === "no shoe") {
+          // Show nothing if "no shoe" is predicted
+          shoeNameEl.textContent = "";
+          shoeNameEl.classList.remove("highlight");
+        }
+      }
+    }
+  </script>
+</body>
+</html>
